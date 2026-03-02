@@ -106,5 +106,6 @@ resource "aws_instance" "web" {
   tags = {
     Name = "${local.prefix}-web"
     Test = "Works"
+    Checkov = "Passed"
   }
 }
