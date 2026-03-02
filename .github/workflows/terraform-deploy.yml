@@ -23,12 +23,11 @@ jobs:
   checkov:
     runs-on: ubuntu-latest
     if: github.event_name == 'pull_request'
-
     steps:
       - name: Checkout repo
         uses: actions/checkout@v4
 
-      - name: Run Checkov Security Scan
+      - name: Run Checkov
         uses: bridgecrewio/checkov-action@v12
         with:
           directory: infra
@@ -36,6 +35,13 @@ jobs:
           output_format: sarif
           output_file_path: checkov-results.sarif
 
+      - name: Run Checkov with Custom Checks
+        run: |
+          pip install checkov
+          checkov -d ./infra \
+            --framework terraform \
+            --external-checks-dir ./check/custom_checks
+  
       - name: Upload Checkov results to GitHub Security
         uses: github/codeql-action/upload-sarif@v3
         if: always()
