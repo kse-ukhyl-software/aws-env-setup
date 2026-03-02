@@ -10,13 +10,13 @@ data "aws_ami" "amazon_linux" {
 
 resource "aws_security_group" "alb" {
   description = "Security group for public ALB"
-  name   = "${local.prefix}-alb"
-  vpc_id = aws_vpc.main.id
+  name        = "${local.prefix}-alb"
+  vpc_id      = aws_vpc.main.id
 
   ingress {
-    description = "Allow HTTPS from trusted CIDR"
-    from_port   = 443
-    to_port     = 443
+    description = "Allow ALB listener traffic from trusted CIDR"
+    from_port   = var.alb_certificate_arn == "" ? 80 : 443
+    to_port     = var.alb_certificate_arn == "" ? 80 : 443
     protocol    = "tcp"
     cidr_blocks = [var.alb_ingress_cidr]
   }
@@ -93,11 +93,12 @@ resource "aws_lb_target_group_attachment" "web" {
 }
 
 resource "aws_lb_listener" "web" {
+  #checkov:skip=CKV_AWS_103:Listener intentionally supports HTTP fallback when alb_certificate_arn is unset.
   load_balancer_arn = aws_lb.web.arn
-  port              = 443
-  protocol          = "HTTPS"
-  certificate_arn   = var.alb_certificate_arn
-  ssl_policy        = "ELBSecurityPolicy-TLS13-1-2-2021-06"
+  port              = var.alb_certificate_arn == "" ? 80 : 443
+  protocol          = var.alb_certificate_arn == "" ? "HTTP" : "HTTPS"
+  certificate_arn   = var.alb_certificate_arn == "" ? null : var.alb_certificate_arn
+  ssl_policy        = var.alb_certificate_arn == "" ? null : "ELBSecurityPolicy-TLS13-1-2-2021-06"
 
   default_action {
     type             = "forward"

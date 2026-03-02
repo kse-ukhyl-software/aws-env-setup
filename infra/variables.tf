@@ -18,8 +18,9 @@ variable "contact" {
 }
 
 variable "alb_certificate_arn" {
-  description = "ACM certificate ARN for HTTPS listener"
+  description = "Optional ACM certificate ARN for HTTPS listener. Leave empty to use HTTP listener."
   type        = string
+  default     = ""
 }
 
 variable "alb_ingress_cidr" {
@@ -31,4 +32,5 @@ variable "alb_ingress_cidr" {
 variable "alb_access_logs_bucket" {
   description = "Existing S3 bucket name for ALB access logs"
   type        = string
+  default     = "cicd-security-tf-state-8148"
 }
