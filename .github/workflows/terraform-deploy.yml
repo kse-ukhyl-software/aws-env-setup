@@ -32,7 +32,9 @@ jobs:
           pip install checkov
           checkov -d ./infra \
             --framework terraform \
-            --external-checks-dir ./check/custom_checks
+            --external-checks-dir ./check/custom_checks \
+            -o sarif \
+            --output-file-path checkov-results.sarif
   
       - name: Upload Checkov results to GitHub Security
         uses: github/codeql-action/upload-sarif@v3
