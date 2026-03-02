@@ -27,14 +27,6 @@ jobs:
       - name: Checkout repo
         uses: actions/checkout@v4
 
-      - name: Run Checkov
-        uses: bridgecrewio/checkov-action@v12
-        with:
-          directory: infra
-          framework: terraform
-          output_format: sarif
-          output_file_path: checkov-results.sarif
-
       - name: Run Checkov with Custom Checks
         run: |
           pip install checkov
