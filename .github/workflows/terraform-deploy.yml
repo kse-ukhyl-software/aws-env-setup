@@ -124,7 +124,6 @@ jobs:
           framework: terraform
           output_format: sarif
           output_file_path: checkov-results.sarif
-        continue-on-error: true
 
       - name: Upload Checkov results to GitHub Security
         uses: github/codeql-action/upload-sarif@v3
