@@ -1,0 +1,11 @@
+metadata:
+  id: "CUSTOM_GRAPH_5"
+  name: "Ensure EC2 instance has Name tag"
+  category: "GENERAL_SECURITY"
+
+definition:
+  cond_type: "attribute"
+  resource_types:
+    - "aws_instance"
+  attribute: "tags.Name"
+  operator: "is_not_empty"
