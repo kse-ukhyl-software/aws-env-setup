@@ -34,7 +34,7 @@ resource "aws_internet_gateway" "main" {
 resource "aws_subnet" "public_a" {
   vpc_id                  = aws_vpc.main.id
   cidr_block              = "10.1.1.0/24"
-  map_public_ip_on_launch = true
+  map_public_ip_on_launch = false
   availability_zone       = "${data.aws_region.current.name}a"
 
   tags = {
@@ -65,7 +65,7 @@ resource "aws_route" "public_internet_access_a" {
 resource "aws_subnet" "public_b" {
   vpc_id                  = aws_vpc.main.id
   cidr_block              = "10.1.2.0/24"
-  map_public_ip_on_launch = true
+  map_public_ip_on_launch = false
   availability_zone       = "${data.aws_region.current.name}b"
 
   tags = {
@@ -121,11 +121,63 @@ resource "aws_security_group" "endpoint_access" {
   vpc_id      = aws_vpc.main.id
 
   ingress {
+    description = "Allow HTTPS from VPC to endpoints"
     cidr_blocks = [aws_vpc.main.cidr_block]
     from_port   = 443 # TODO: is it correct port?
     to_port     = 443
     protocol    = "tcp"
   }
+
+  egress {
+    description = "Allow HTTPS from endpoints to VPC"
+    cidr_blocks = [aws_vpc.main.cidr_block]
+    from_port   = 443
+    to_port     = 443
+    protocol    = "tcp"
+  }
+}
+
+resource "aws_default_security_group" "default" {
+  vpc_id = aws_vpc.main.id
+}
+
+resource "aws_cloudwatch_log_group" "vpc_flow" {
+  name              = "/aws/vpc/${local.prefix}-flow-logs"
+  retention_in_days = 365
+  kms_key_id        = aws_kms_key.flow_logs.arn
+}
+
+resource "aws_flow_log" "main" {
+  iam_role_arn         = aws_iam_role.vpc_flow_logs.arn
+  log_destination      = aws_cloudwatch_log_group.vpc_flow.arn
+  log_destination_type = "cloud-watch-logs"
+  traffic_type         = "ALL"
+  vpc_id               = aws_vpc.main.id
+}
+
+resource "aws_kms_key" "flow_logs" {
+  description             = "KMS key for VPC flow logs"
+  enable_key_rotation     = true
+  deletion_window_in_days = 7
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Sid    = "EnableRootPermissions"
+        Effect = "Allow"
+        Principal = {
+          AWS = "arn:aws:iam::${data.aws_caller_identity.current.account_id}:root"
+        }
+        Action   = "kms:*"
+        Resource = "*"
+      }
+    ]
+  })
+}
+
+resource "aws_kms_alias" "flow_logs" {
+  name          = "alias/${local.prefix}-flow-logs"
+  target_key_id = aws_kms_key.flow_logs.key_id
 }
 
 resource "aws_vpc_endpoint" "cloudwatch_logs" {
